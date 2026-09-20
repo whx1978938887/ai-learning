@@ -34,7 +34,7 @@ def test_siliconflow():
     )
     
     response = client.chat.completions.create(
-        model="deepseek-ai/DeepSeek-V3",  # 或 Qwen/Qwen2.5-7B-Instruct（免费）
+        model="Qwen/Qwen2.5-7B-Instruct",  # 或 Qwen/Qwen2.5-7B-Instruct（免费）
         messages=[
             {"role": "user", "content": "你好，请用一句话介绍你自己"}
         ],
