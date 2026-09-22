@@ -53,6 +53,10 @@ AUTHROIC_API_KAY=sk-xxxxxx
 uv add requests
 ```
 
+## 核心知识点
+
+- 流式输出[流式输出](./chats/HTTP请求与响应的流式处理-20260921144418.pdf)
+
 ## 注意事项
 
 > **调用openai和requests的区别**
