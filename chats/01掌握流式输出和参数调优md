@@ -12,6 +12,8 @@
 
 ### 2. Python 实战代码
 
+[event_stream.py](../src/ai_learning/event_stream.py)
+
 ```python
 import requests
 import json
@@ -83,6 +85,8 @@ def stream_chat(prompt: str, max_tokens: int = 2048):
 | **模型返回空内容/重复循环** | 模型行为异常 | ⚠️ 特殊处理 | 提示用户换问法，触发备用模型 |
 
 ### 2. 指数退避重试实现
+
+[retry_backoff.py](../src/ai_learning/retry_backoff.py)
 
 ```python
 import time
