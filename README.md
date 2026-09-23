@@ -62,5 +62,6 @@ uv add requests
 ## 注意事项
 
 > **调用openai和requests的区别**
+>
 > openai内部封装了请求
 > 调用requests需要自己封装请求

@@ -31,7 +31,7 @@
 
 ### 以大模型流式输出为例的完整链路
 
-```
+```text
 用户提问 → 客户端发起 HTTP 请求（stream=true）
          → 服务器返回响应头（Content-Type: text/event-stream, Transfer-Encoding: chunked）
          → 模型开始自回归生成 token
@@ -47,7 +47,7 @@
 ### 总结
 
 | 对比维度 | 普通 HTTP 响应 | 流式响应 |
-|---|---|---|
+| -- | --- | --- |
 | 响应头 | `Content-Length: N` | `Transfer-Encoding: chunked` |
 | 发送时机 | 全部生成完一次性发送 | 边生成边发送 |
 | 连接行为 | 发送完立即关闭 | 保持打开，持续推送 |
@@ -103,7 +103,7 @@ def generate_stream():
 这是最核心的区别：
 
 | 特性 | `return` | `yield` |
-|---|---|---|
+| --- | --- | --- |
 | 执行行为 | 函数执行完毕，返回结果，函数销毁 | 函数**暂停**，产出当前值，保留状态 |
 | 再次调用 | 需要重新调用函数 | 从上次暂停处**继续执行** |
 | 执行次数 | 1次执行 → 1次返回 | 1次调用 → N次暂停/继续 → N次产出 |
@@ -132,7 +132,7 @@ next(gen)  # 函数执行完毕，抛出 StopIteration → 连接关闭
 
 ### 对应到 HTTP 流式输出的完整链路
 
-```
+```text
 客户端发起 1 次 HTTP POST 请求
         ↓
 服务端 chat() 函数被调用 1 次
@@ -197,7 +197,7 @@ TCP 连接保持打开，不关闭
 
 这正是你之前问的"一次请求、多次接收"在客户端的体现。`iter_content()` 内部封装了一个**生成器（generator）**，底层工作流程如下：
 
-```
+```text
 请求时设置 stream=True
         ↓
 requests 只下载响应头（headers），不立即下载响应体
@@ -228,7 +228,7 @@ def iter_content(self, chunk_size=8192, decode_unicode=False):
 ### 为什么需要 `stream=True`？
 
 | 模式 | 行为 | 内存占用 |
-|---|---|---|
+| --- | --- | --- |
 | `stream=False`（默认） | 请求发出后，立即等待整个响应体下载完毕，全部加载到内存 | 响应多大就占多大内存 |
 | `stream=True` | 只下载响应头，响应体按需通过 `iter_content()` 逐块读取 | 恒定占用 `chunk_size` 大小的内存 |
 
@@ -269,7 +269,7 @@ for chunk in response.iter_content(chunk_size=1024):
 ### 与相关方法的对比
 
 | 方法 | 返回类型 | 适用场景 |
-|---|---|---|
+| --- | --- | --- |
 | `response.content` | `bytes`（一次性全部） | 小文件、非流式场景 |
 | `response.text` | `str`（一次性全部） | 小文本、网页源码 |
 | `response.json()` | `dict/list` | JSON 接口 |
@@ -294,7 +294,7 @@ for chunk in response.iter_content(chunk_size=1024):
 
 ### 计算公式（近似）
 
-```
+```text
 循环次数 ≈ 响应体总字节数 / chunk_size（向上取整）
 ```
 
@@ -331,7 +331,7 @@ print(f"循环共执行 {count} 次，总数据量 {total_bytes} 字节")
 
 运行后你会看到类似输出：
 
-```
+```text
 第1次循环，收到 8192 字节
 第2次循环，收到 8192 字节
 第3次循环，收到 8192 字节
@@ -350,7 +350,7 @@ print(f"循环共执行 {count} 次，总数据量 {total_bytes} 字节")
 
 这也是为什么处理 SSE 流时更推荐用 `iter_lines()`——它按行（`\n\n`）分割，每收到一个完整事件就 yield 一次，循环次数 = token 数量，更符合直觉。
 
-### 一句话总结
+### 一句话
 
 > **循环执行次数 = 服务端实际推送的 chunk 数量**，由"响应体总大小 ÷ 网络层实际到达的数据块大小"决定，`chunk_size` 只是控制每次最多读多少，不决定精确的循环次数。
 
@@ -430,7 +430,7 @@ for chunk in response.iter_content(chunk_size=1024):
 
 ### 完整执行流程总结
 
-```
+```text
 1. 导入 requests 库
 2. 定义接口地址和请求数据
 3. 发送 POST 请求，开启流式模式（stream=True）
@@ -651,7 +651,7 @@ line, buffer = buffer.split("\n", 1)
 if line.startswith("data: ") and line.strip() != "data: [DONE]":
 ```
 
-- **`line.startswith("data: ")` 方法**：检查这行是否以 `data: ` 开头。SSE 协议的格式规定每个事件数据行以 `data: ` 开头。
+- **`line.startswith("data: ")` 方法**：检查这行是否以 `data:` 开头。SSE 协议的格式规定每个事件数据行以 `data:` 开头。
 - **`line.strip() != "data: [DONE]"`**：`strip()` 去掉字符串首尾空白字符。`data: [DONE]` 是智谱 API 的流式结束标记，表示模型已经生成完毕，不需要处理这行数据，直接跳过。
 
 ### 第 34~41 行：解析 JSON 并提取内容
@@ -673,7 +673,7 @@ except json.JSONDecodeError:
 
 #### 第 35 行：`chunk = json.loads(line[6:])`
 
-- **`line[6:]`**：字符串切片，去掉前 6 个字符 `data: `，得到纯 JSON 字符串。
+- **`line[6:]`**：字符串切片，去掉前 6 个字符 `data:`，得到纯 JSON 字符串。
 - **`json.loads()` 函数**：`json` 模块的函数，将 JSON 字符串解析为 Python 字典/列表。解析结果赋值给 `chunk` 变量。
 
 #### 第 36 行：`delta=chunk["choices"][0]["delta"].get("content", "")`
@@ -735,9 +735,9 @@ if __name__ == "__main__":
 - **`prompt = "你好，请用一句话介绍一下你自己"`**：定义用户提问的文本。
 - **`stream_chat(prompt)`**：调用前面定义的流式聊天函数，传入用户提问，开始发送请求并流式输出响应。
 
-### 完整执行流程总结
+### 完整执行流程
 
-```
+```text
 1. 导入所需库（requests、json、os、dotenv）
 2. 从 .env 文件加载环境变量（获取 API Key）
 3. 定义 API 密钥和接口地址
@@ -771,4 +771,4 @@ if __name__ == "__main__":
 
 ---
 
-*整理完成*
+## 整理完成
