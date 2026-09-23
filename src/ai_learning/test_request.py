@@ -13,7 +13,7 @@ ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 # 2.准备请求头
 headers = {
     "Authorization": f"Bearer {ZHIPU_API_KEY}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
 }
 
 # 3.准备问题（消息体）
@@ -21,9 +21,9 @@ data = {
     "model": "glm-5.3-flash",  # 免费模型
     "messages": [
         {"role": "system", "content": "你是一个乐于助人的AI助手。"},
-        {"role": "user", "content": "你好，请用一句话介绍一下你自己"}
+        {"role": "user", "content": "你好，请用一句话介绍一下你自己"},
     ],
-    "temperature": 0.7
+    "temperature": 0.7,
 }
 
 # 4. 发送请求并获取结果
@@ -33,7 +33,7 @@ try:
 
     # 5.解析并打印AI的回答
     result = response.json()
-    ai_reply= result['choices'][0]['message']['content']
+    ai_reply = result["choices"][0]["message"]["content"]
     print("AI回答：", ai_reply)
 
 except Exception as e:
