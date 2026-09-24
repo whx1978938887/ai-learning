@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 开发学习计划看板</title>
+<style>
+/* SECTION: reset-base */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#242836;--surface3:#2e3344;
+  --border:#363b4e;--text:#e4e6f0;--text2:#9ba1b8;--text3:#6b7190;
+  --accent:#6c8cff;--accent2:#5470e6;--accent-glow:rgba(108,140,255,.15);
+  --green:#4ade80;--green-bg:rgba(74,222,128,.1);
+  --orange:#fb923c;--orange-bg:rgba(251,146,60,.1);
+  --red:#f87171;--purple:#a78bfa;--cyan:#22d3ee;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+/* SECTION: header */
+.header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg) 0%,rgba(15,17,23,.95) 100%);backdrop-filter:blur(20px);padding:24px 32px 20px;border-bottom:1px solid var(--border)}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.header h1{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .date-info{font-size:13px;color:var(--text3)}
+.stats-row{display:flex;gap:16px;flex-wrap:wrap}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 20px;min-width:160px;flex:1}
+.stat-card .label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.stat-card .value{font-size:24px;font-weight:700;color:var(--text)}
+.stat-card .value span{font-size:14px;color:var(--text2);font-weight:400}
+.progress-bar-wrap{margin-top:12px}
+.progress-bar-bg{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.progress-bar-fill.total{background:linear-gradient(90deg,var(--accent),var(--purple))}
+.progress-bar-fill.week{background:linear-gradient(90deg,var(--green),var(--cyan))}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px}
+/* SECTION: controls */
+.controls{padding:16px 32px;display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s}
+.btn:hover{background:var(--surface2);color:var(--text);border-color:var(--accent)}
+.btn.active{background:var(--accent-glow);color:var(--accent);border-color:var(--accent)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:rgba(248,113,113,.1)}
+/* SECTION: main */
+.main{padding:0 32px 40px}
+/* SECTION: week-section */
+.week-section{margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.week-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;transition:background .2s}
+.week-header:hover{background:var(--surface2)}
+.week-header .week-info{display:flex;align-items:center;gap:12px}
+.week-header .week-num{font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-glow);padding:4px 10px;border-radius:4px;white-space:nowrap}
+.week-header .week-title{font-size:15px;font-weight:600;color:var(--text)}
+.week-header .week-date{font-size:12px;color:var(--text3)}
+.week-header .week-progress{display:flex;align-items:center;gap:10px}
+.week-header .week-count{font-size:13px;color:var(--text2);white-space:nowrap}
+.mini-bar{width:80px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.chevron{width:20px;height:20px;color:var(--text3);transition:transform .3s ease;flex-shrink:0}
+.week-section.collapsed .chevron{transform:rotate(-90deg)}
+.week-body{border-top:1px solid var(--border);transition:max-height .4s ease,opacity .3s ease;overflow:hidden}
+.week-section.collapsed .week-body{max-height:0!important;opacity:0;border-top:none}
+/* SECTION: task-item */
+.task-list{padding:8px 12px}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .2s}
+.task-item:hover{background:var(--surface2)}
+.task-item.completed .task-text{color:var(--text3);text-decoration:line-through}
+.task-item.today{background:var(--accent-glow);border-left:3px solid var(--accent)}
+.task-item.overdue .task-date{color:var(--red)}
+/* SECTION: checkbox */
+.checkbox{position:relative;width:20px;height:20px;flex-shrink:0;margin-top:2px;cursor:pointer}
+.checkbox input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1}
+.checkbox .checkmark{width:20px;height:20px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.checkbox input:checked+.checkmark{background:var(--green);border-color:var(--green)}
+.checkbox input:checked+.checkmark::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.task-content{flex:1;min-width:0}
+.task-text{font-size:14px;color:var(--text);line-height:1.5}
+.task-meta{display:flex;align-items:center;gap:8px;margin-top:2px}
+.task-date{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.task-day{font-size:11px;padding:1px 6px;border-radius:3px;font-weight:500}
+.priority-p1{background:rgba(248,113,113,.12);color:var(--red)}
+.priority-p2{background:var(--orange-bg);color:var(--orange)}
+/* SECTION: responsive */
+@media(max-width:768px){
+  .header,.controls,.main{padding-left:16px;padding-right:16px}
+  .stats-row{gap:8px}
+  .stat-card{min-width:120px;padding:10px 14px}
+  .stat-card .value{font-size:20px}
+  .week-header .week-info{flex-wrap:wrap;gap:6px}
+  .mini-bar{width:60px}
+}
+/* SECTION: animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.week-section{animation:fadeIn .4s ease backwards}
+.week-section:nth-child(1){animation-delay:.05s}
+.week-section:nth-child(2){animation-delay:.1s}
+.week-section:nth-child(3){animation-delay:.15s}
+.week-section:nth-child(4){animation-delay:.2s}
+.week-section:nth-child(5){animation-delay:.25s}
+.week-section:nth-child(6){animation-delay:.3s}
+/* SECTION: toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);color:var(--text);padding:12px 24px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:14px;opacity:0;transition:all .3s ease;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- SECTION: header-html -->
+<div class="header">
+  <div class="header-top">
+    <h1>AI 开发学习计划</h1>
+    <div class="date-info" id="dateInfo"></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">总进度</div>
+      <div class="value" id="totalProgress">0<span> / 55</span></div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill total" id="totalBar" style="width:0%"></div></div>
+        <div class="progress-label"><span id="totalPct">0%</span><span>55 任务</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="label">本周进度</div>
+      <div class="value" id="weekProgress">0<span> / 0</span></div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill week" id="weekBar" style="width:0%"></div></div>
+        <div class="progress-label"><span id="weekPct">0%</span><span id="weekLabel">—</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="label">连续打卡</div>
+      <div class="value" id="streakCount">0<span> 天</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" data-primary-action="expand-all" onclick="toggleAll(true)">展开全部</button>
+  <button class="btn" onclick="toggleAll(false)">折叠全部</button>
+  <button class="btn" onclick="scrollToToday()">跳转到今天</button>
+  <button class="btn danger" onclick="resetAll()">重置进度</button>
+</div>
+
+<div class="main" id="main"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// SECTION: task-data
+const WEEKS = [
+  {
+    num: "第1周", title: "大模型API调用 + Prompt工程", dateRange: "9/20 - 9/26",
+    color: "#6c8cff",
+    tasks: [
+      {id:"w1t1",day:"Day 1",text:"注册通义千问、DeepSeek、智谱GLM开发者账号，获取API Key",date:"09-20",priority:"p1"},
+      {id:"w1t2",day:"Day 1",text:"用Python requests库或官方SDK调用API，实现基础对话补全",date:"09-20",priority:"p1"},
+      {id:"w1t3",day:"Day 2",text:"掌握流式输出、错误处理、参数调优（temperature、max_tokens、top_p）",date:"09-21",priority:"p2"},
+      {id:"w1t4",day:"Day 2",text:"对比不同模型的输出质量、响应速度和成本，写对比笔记",date:"09-21",priority:"p2"},
+      {id:"w1t5",day:"Day 3",text:"学习结构化Prompt设计（角色设定+任务描述+输出格式+Few-shot）",date:"09-22",priority:"p1"},
+      {id:"w1t6",day:"Day 4",text:"掌握CoT思维链、零样本/少样本学习、Negative Prompting",date:"09-23",priority:"p1"},
+      {id:"w1t7",day:"Day 4",text:"练习让模型输出JSON格式、Markdown表格等结构化内容",date:"09-23",priority:"p2"},
+      {id:"w1t8",day:"Day 5",text:"编写Prompt模板库（文案生成、代码生成、数据提取等场景）",date:"09-24",priority:"p1"},
+      {id:"w1t9",day:"Day 5-6",text:"用Python写CLI聊天机器人，支持多轮对话和上下文记忆",date:"09-24",priority:"p1"},
+      {id:"w1t10",day:"Day 6-7",text:"加入流式输出 + 对话历史管理 + 代码上传GitHub写README",date:"09-25",priority:"p1"}
+    ]
+  },
+  {
+    num: "第2周", title: "LangChain框架 + RAG入门", dateRange: "9/27 - 10/3",
+    color: "#5470e6",
+    tasks: [
+      {id:"w2t1",day:"Day 8",text:"学习LangChain核心概念（Chain、Memory、Retriever、Tool）",date:"09-27",priority:"p1"},
+      {id:"w2t2",day:"Day 8-9",text:"用LangChain重构聊天机器人，加入对话记忆功能",date:"09-27",priority:"p1"},
+      {id:"w2t3",day:"Day 9",text:"学习PromptTemplate和OutputParser",date:"09-28",priority:"p2"},
+      {id:"w2t4",day:"Day 10",text:"学习文档加载器（PyPDF2、python-docx、Unstructured）",date:"09-29",priority:"p1"},
+      {id:"w2t5",day:"Day 10-11",text:"掌握文本分块策略（按字符数、按段落、递归分块）",date:"09-29",priority:"p1"},
+      {id:"w2t6",day:"Day 11",text:"用NumPy/Pandas处理测试文档，练习数据清洗",date:"09-30",priority:"p2"},
+      {id:"w2t7",day:"Day 11",text:"了解Embedding原理，调用Embedding API把文本转向量",date:"09-30",priority:"p1"},
+      {id:"w2t8",day:"Day 12",text:"学习Chroma或FAISS向量数据库",date:"10-01",priority:"p1"},
+      {id:"w2t9",day:"Day 12-13",text:"实现完整RAG流程（加载→分块→向量化→检索→生成）",date:"10-01",priority:"p1"},
+      {id:"w2t10",day:"Day 13-14",text:"搭建个人笔记问答助手，上传Markdown笔记回答问题",date:"10-02",priority:"p1"},
+      {id:"w2t11",day:"Day 14",text:"优化分块大小和重叠率，对比检索效果",date:"10-03",priority:"p2"}
+    ]
+  },
+  {
+    num: "第3周", title: "RAG进阶 + Agent开发", dateRange: "10/4 - 10/10",
+    color: "#a78bfa",
+    tasks: [
+      {id:"w3t1",day:"Day 15",text:"学习混合检索（关键词+语义）、重排序Reranker、HyDE",date:"10-04",priority:"p1"},
+      {id:"w3t2",day:"Day 15-16",text:"了解RAGAS评估框架，量化评估RAG检索和生成质量",date:"10-04",priority:"p1"},
+      {id:"w3t3",day:"Day 16",text:"优化笔记问答助手，提升回答准确率，减少幻觉",date:"10-05",priority:"p1"},
+      {id:"w3t4",day:"Day 17",text:"学习LlamaIndex框架，对比LangChain和LlamaIndex",date:"10-06",priority:"p2"},
+      {id:"w3t5",day:"Day 18",text:"理解Function Calling机制（模型决定调用哪个工具、传什么参数）",date:"10-07",priority:"p1"},
+      {id:"w3t6",day:"Day 18-19",text:"用LangChain实现工具调用（查天气、搜网页、算数学题）",date:"10-07",priority:"p1"},
+      {id:"w3t7",day:"Day 19",text:"学习ReAct范式（推理→行动→观察→再推理）",date:"10-08",priority:"p1"},
+      {id:"w3t8",day:"Day 20",text:"学习LangGraph框架，实现有状态的任务编排",date:"10-09",priority:"p1"},
+      {id:"w3t9",day:"Day 20",text:"实现Agent短期记忆（对话历史）和长期记忆（向量库存储）",date:"10-09",priority:"p1"},
+      {id:"w3t10",day:"Day 21",text:"搭建AI办公助手（查天气、搜新闻、管待办、写邮件）",date:"10-10",priority:"p1"}
+    ]
+  },
+  {
+    num: "第4周", title: "综合项目 + 工程化部署", dateRange: "10/11 - 10/17",
+    color: "#22d3ee",
+    tasks: [
+      {id:"w4t1",day:"Day 22",text:"搭建企业知识库问答系统——支持PDF/Word/TXT多格式上传",date:"10-11",priority:"p1"},
+      {id:"w4t2",day:"Day 23",text:"实现文档自动分块、向量化、存入向量数据库",date:"10-12",priority:"p1"},
+      {id:"w4t3",day:"Day 24",text:"实现语义检索 + 关键词检索的混合检索",date:"10-13",priority:"p1"},
+      {id:"w4t4",day:"Day 25",text:"支持多轮对话和引用来源标注",date:"10-14",priority:"p1"},
+      {id:"w4t5",day:"Day 26",text:"用Streamlit或Gradio搭建Web界面，代码上传GitHub写技术文档",date:"10-15",priority:"p1"},
+      {id:"w4t6",day:"Day 27",text:"Docker容器化部署——编写Dockerfile和docker-compose.yml",date:"10-16",priority:"p1"},
+      {id:"w4t7",day:"Day 28",text:"部署到本地或云服务器，了解vLLM容器化部署",date:"10-17",priority:"p1"}
+    ]
+  },
+  {
+    num: "第5周", title: "模型微调基础 + 项目打磨", dateRange: "10/18 - 10/24",
+    color: "#fb923c",
+    tasks: [
+      {id:"w5t1",day:"Day 29",text:"了解LoRA/QLoRA轻量化微调原理",date:"10-18",priority:"p2"},
+      {id:"w5t2",day:"Day 30",text:"用LLaMA-Factory工具对Qwen或Llama3做简单微调",date:"10-19",priority:"p2"},
+      {id:"w5t3",day:"Day 31",text:"微调一个垂直领域小模型（如客服问答），体验完整流程",date:"10-20",priority:"p2"},
+      {id:"w5t4",day:"Day 32",text:"设计AI Agent智能办公助手——支持多工具调用（搜索、计算器、日程管理）",date:"10-21",priority:"p1"},
+      {id:"w5t5",day:"Day 33",text:"实现任务规划和多步推理功能",date:"10-22",priority:"p1"},
+      {id:"w5t6",day:"Day 34",text:"用LangGraph实现状态管理",date:"10-23",priority:"p1"},
+      {id:"w5t7",day:"Day 35",text:"用FastAPI封装成API接口，项目上传GitHub",date:"10-24",priority:"p1"}
+    ]
+  },
+  {
+    num: "第6周", title: "简历优化 + 面试准备 + 投递", dateRange: "10/25 - 11/3",
+    color: "#4ade80",
+    tasks: [
+      {id:"w6t1",day:"Day 36",text:"简历优化——突出后端开发经验 + Docker部署能力 + 2个完整AI项目",date:"10-25",priority:"p1"},
+      {id:"w6t2",day:"Day 37",text:"用STAR法则撰写项目描述（场景→任务→行动→结果），量化成果",date:"10-26",priority:"p1"},
+      {id:"w6t3",day:"Day 38",text:"整理GitHub仓库，README写清楚技术栈和部署方式",date:"10-27",priority:"p1"},
+      {id:"w6t4",day:"Day 39",text:"刷题——RAG全流程原理、幻觉问题解决、Embedding和向量检索",date:"10-28",priority:"p1"},
+      {id:"w6t5",day:"Day 40",text:"刷题——ReAct范式、Function Calling机制、LangChain核心组件",date:"10-29",priority:"p1"},
+      {id:"w6t6",day:"Day 41",text:"刷题——模型选型、成本控制、后端开发基础题、Docker/K8s",date:"10-30",priority:"p1"},
+      {id:"w6t7",day:"Day 42",text:"开始投递，优先投传统行业AI岗（金融、医疗、制造、教育）",date:"10-31",priority:"p1"},
+      {id:"w6t8",day:"Day 43",text:"重点投递珠三角智能制造、新能源企业",date:"11-01",priority:"p1"},
+      {id:"w6t9",day:"Day 44",text:"根据面试反馈持续优化简历和项目",date:"11-02",priority:"p2"},
+      {id:"w6t10",day:"Day 45",text:"针对性补强面试中发现的薄弱知识点，持续投递",date:"11-03",priority:"p2"}
+    ]
+  }
+];
+
+// SECTION: state
+const STORAGE_KEY = 'ai-learning-dashboard-v1';
+const STATE_KEY = 'ai-learning-state-v1';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function loadCollapsed() {
+  try { return JSON.parse(localStorage.getItem(STATE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveCollapsed(c) {
+  localStorage.setItem(STATE_KEY, JSON.stringify(c));
+}
+
+let state = loadState();
+let collapsed = loadCollapsed();
+
+// SECTION: utils
+function todayStr() {
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${m}-${day}`;
+}
+
+function getCurrentWeekIndex() {
+  const today = todayStr();
+  for (let i = 0; i < WEEKS.length; i++) {
+    const tasks = WEEKS[i].tasks;
+    const first = tasks[0].date;
+    const last = tasks[tasks.length-1].date;
+    if (today >= first && today <= last) return i;
+  }
+  // Before week 1 or after all
+  if (today < WEEKS[0].tasks[0].date) return 0;
+  return WEEKS.length - 1;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// SECTION: render
+function render() {
+  const today = todayStr();
+  const curWeek = getCurrentWeekIndex();
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  let totalDone = 0, totalTasks = 0;
+  let weekDone = 0, weekTotal = 0;
+
+  // Date info
+  const d = new Date();
+  const weekdays = ['日','一','二','三','四','五','六'];
+  document.getElementById('dateInfo').textContent =
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${weekdays[d.getDay()]}`;
+
+  WEEKS.forEach((week, wi) => {
+    const section = document.createElement('div');
+    section.className = 'week-section' + (collapsed[wi] ? ' collapsed' : '');
+    section.id = 'week-' + wi;
+
+    let wDone = 0;
+    week.tasks.forEach(t => {
+      totalTasks++;
+      if (state[t.id]) { totalDone++; wDone++; }
+    });
+    if (wi === curWeek) { weekDone = wDone; weekTotal = week.tasks.length; }
+
+    const pct = week.tasks.length ? Math.round(wDone / week.tasks.length * 100) : 0;
+
+    // Week header
+    const header = document.createElement('div');
+    header.className = 'week-header';
+    header.innerHTML = `
+      <div class="week-info">
+        <span class="week-num" style="color:${week.color};background:${week.color}18">${week.num}</span>
+        <span class="week-title">${week.title}</span>
+        <span class="week-date">${week.dateRange}</span>
+      </div>
+      <div class="week-progress">
+        <span class="week-count">${wDone} / ${week.tasks.length}</span>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%;background:${week.color}"></div></div>
+        <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>`;
+    header.onclick = () => {
+      collapsed[wi] = !collapsed[wi];
+      saveCollapsed(collapsed);
+      section.classList.toggle('collapsed');
+    };
+    section.appendChild(header);
+
+    // Task list
+    const body = document.createElement('div');
+    body.className = 'week-body';
+    const list = document.createElement('div');
+    list.className = 'task-list';
+
+    week.tasks.forEach(task => {
+      const done = !!state[task.id];
+      const isToday = task.date === today;
+      const isOverdue = !done && task.date < today;
+
+      const item = document.createElement('div');
+      item.className = 'task-item' + (done ? ' completed' : '') + (isToday ? ' today' : '') + (isOverdue ? ' overdue' : '');
+
+      const priorityLabel = task.priority === 'p1' ? '核心' : '加分';
+      const priorityClass = task.priority === 'p1' ? 'priority-p1' : 'priority-p2';
+
+      item.innerHTML = `
+        <label class="checkbox">
+          <input type="checkbox" ${done ? 'checked' : ''} data-id="${task.id}">
+          <div class="checkmark"></div>
+        </label>
+        <div class="task-content">
+          <div class="task-text">${task.text}</div>
+          <div class="task-meta">
+            <span class="task-day ${priorityClass}">${priorityLabel}</span>
+            <span class="task-date">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a.5.5 0 01.5.5V1h7V.5a.5.5 0 011 0V1h1a2 2 0 012 2v11a2 2 0 01-2 2H2a2 2 0 01-2-2V3a2 2 0 012-2h1V.5A.5.5 0 014 0zM1 5v9a1 1 0 001 1h12a1 1 0 001-1V5H1z"/></svg>
+              ${task.date}
+            </span>
+            <span class="task-date" style="opacity:.7">${task.day}</span>
+          </div>
+        </div>`;
+
+      const cb = item.querySelector('input');
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          state[task.id] = true;
+          item.classList.add('completed');
+        } else {
+          delete state[task.id];
+          item.classList.remove('completed');
+        }
+        saveState(state);
+        updateStats();
+        // Update this week's progress in header
+        const newPct = getWeekPct(wi);
+        header.querySelector('.week-count').textContent = `${countWeekDone(wi)} / ${WEEKS[wi].tasks.length}`;
+        header.querySelector('.mini-bar-fill').style.width = newPct + '%';
+      });
+
+      list.appendChild(item);
+    });
+
+    body.appendChild(list);
+    section.appendChild(body);
+    main.appendChild(section);
+  });
+
+  updateStats();
+}
+
+function countWeekDone(wi) {
+  return WEEKS[wi].tasks.filter(t => state[t.id]).length;
+}
+function getWeekPct(wi) {
+  const total = WEEKS[wi].tasks.length;
+  return total ? Math.round(countWeekDone(wi) / total * 100) : 0;
+}
+
+function updateStats() {
+  let totalDone = 0, totalTasks = 0;
+  WEEKS.forEach(w => {
+    totalTasks += w.tasks.length;
+    w.tasks.forEach(t => { if (state[t.id]) totalDone++; });
+  });
+  const totalPct = totalTasks ? Math.round(totalDone / totalTasks * 100) : 0;
+  document.getElementById('totalProgress').innerHTML = `${totalDone}<span> / ${totalTasks}</span>`;
+  document.getElementById('totalBar').style.width = totalPct + '%';
+  document.getElementById('totalPct').textContent = totalPct + '%';
+
+  const curWeek = getCurrentWeekIndex();
+  const wDone = countWeekDone(curWeek);
+  const wTotal = WEEKS[curWeek].tasks.length;
+  const wPct = wTotal ? Math.round(wDone / wTotal * 100) : 0;
+  document.getElementById('weekProgress').innerHTML = `${wDone}<span> / ${wTotal}</span>`;
+  document.getElementById('weekBar').style.width = wPct + '%';
+  document.getElementById('weekPct').textContent = wPct + '%';
+  document.getElementById('weekLabel').textContent = WEEKS[curWeek].num;
+
+  // Streak calculation
+  const streak = calcStreak();
+  document.getElementById('streakCount').innerHTML = `${streak}<span> 天</span>`;
+}
+
+function calcStreak() {
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const dateStr = `${m}-${day}`;
+    let hasTask = false, allDone = true;
+    WEEKS.forEach(w => {
+      w.tasks.forEach(t => {
+        if (t.date === dateStr) { hasTask = true; if (!state[t.id]) allDone = false; }
+      });
+    });
+    if (hasTask && allDone) streak++;
+    else if (hasTask) break;
+    // Days without tasks don't break the streak
+  }
+  return streak;
+}
+
+// SECTION: controls-actions
+function toggleAll(expand) {
+  document.querySelectorAll('.week-section').forEach((s, i) => {
+    if (expand) { s.classList.remove('collapsed'); collapsed[i] = false; }
+    else { s.classList.add('collapsed'); collapsed[i] = true; }
+  });
+  saveCollapsed(collapsed);
+}
+
+function scrollToToday() {
+  const today = todayStr();
+  let found = false;
+  WEEKS.forEach((w, wi) => {
+    const hasToday = w.tasks.some(t => t.date === today);
+    if (hasToday && !found) {
+      found = true;
+      const sec = document.getElementById('week-' + wi);
+      if (sec.classList.contains('collapsed')) {
+        sec.classList.remove('collapsed');
+        collapsed[wi] = false;
+        saveCollapsed(collapsed);
+      }
+      setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  });
+  if (!found) showToast('今天没有安排任务');
+}
+
+function resetAll() {
+  if (confirm('确定要重置所有任务进度吗？此操作不可撤销。')) {
+    state = {};
+    saveState(state);
+    render();
+    showToast('已重置所有进度');
+  }
+}
+
+// SECTION: init
+render();
+</script>
+</body>
+</html>

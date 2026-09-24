@@ -1,0 +1,272 @@
+# 大模型 API 工程化实战指南
+
+## 一、流式输出：从原理到落地
+
+### 1. 核心原理
+
+流式输出本质是**服务端每生成一个 Token 就立即推送**，而非等全部内容生成完再一次性返回。技术实现上：
+
+- **协议层**：基于 SSE（Server-Sent Events），通过 `Transfer-Encoding: chunked` 分块传输，响应头 `Content-Type: text/event-stream`
+- **数据格式**：每行以 `data:` 开头，后接 JSON 对象，以 `\n\n` 分隔；增量内容在 `choices[0].delta.content` 字段；结束时推送 `data: [DONE]`
+- **性能优化**：服务端通常累积 2-3 个 Token 或按句子边界发送一个 Chunk，平衡网络开销与实时性
+
+### 2. Python 实战代码
+
+[event_stream.py](../src/ai_learning/event_stream.py)
+
+```python
+import requests
+import json
+import os
+
+API_KEY = os.environ.get('DASHSCOPE_API_KEY')
+API_URL = "https://dashscope.aliyunapi.com/compatible-mode/v1/chat/completions"
+
+def stream_chat(prompt: str, max_tokens: int = 2048):
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream"
+    }
+    payload = {
+        "model": "qwen-plus",
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": True,
+        "max_tokens": max_tokens
+    }
+    
+    response = requests.post(API_URL, headers=headers, json=payload, stream=True, timeout=60)
+    response.raise_for_status()
+    
+    full_content = ""
+    buffer = ""
+    for raw_bytes in response.iter_content(chunk_size=None, decode_unicode=False):
+        if not raw_bytes:
+            continue
+        buffer += raw_bytes.decode("utf-8", errors="replace")
+        while "\n" in buffer:
+            line, buffer = buffer.split("\n", 1)
+            if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                try:
+                    chunk = json.loads(line[6:])
+                    delta = chunk["choices"][0]["delta"].get("content", "")
+                    if delta:
+                        full_content += delta
+                        print(delta, end="", flush=True)  # 打字机效果
+                except json.JSONDecodeError:
+                    pass  # 跳过不完整JSON片段
+    print("\n\n【完整输出】", full_content)
+    return full_content
+```
+
+### 3. 关键避坑点
+
+- **Nginx 反向代理**：必须配置 `proxy_buffering off` 和 `proxy_read_timeout 300s`，否则代理层会缓冲数据，流式失效
+- **前端接收**：`EventSource` 不支持自定义 Header，工程上统一用 `fetch + ReadableStream` 手动消费
+- **Token 用量**：流式模式下 `usage` 字段在最后一个 Chunk 返回，需设置 `stream_options={"include_usage": true}`
+
+---
+
+## 二、错误处理：生产级异常分类框架
+
+大模型 API 的错误比传统 HTTP API 复杂得多，核心原则是：**哪些异常该让用户处理，哪些该系统自动兜底**。
+
+### 1. 异常分类表（按处理策略）
+
+| 状态码 | 类型 | 能否重试 | 处理策略 |
+| -------- | ----- | ---------- | ---------- |
+| **429** | 限流 | ✅ 可重试 | 指数退避+抖动，最多3-5次；仍失败则降级 |
+| **500/502/503/504** | 服务端错误 | ✅ 可重试 | 重试1-2次，持续报错则触发兜底 |
+| **网络超时/连接中断** | 临时故障 | ✅ 可重试 | 重试，注意幂等性 |
+| **401/403** | 鉴权失败 | ❌ 不可重试 | 提示用户检查 Key，**禁止自动重试** |
+| **400/422** | 参数错误 | ❌ 不可重试 | 提示"输入过长请缩短"等具体信息 |
+| **余额不足/账户冻结** | 账户问题 | ❌ 不可重试 | 直接提示充值，**禁止重试** |
+| **SSE流中断/JSON解析失败** | 流式异常 | ⚠️ 特殊处理 | 丢弃不完整内容，回退到非流式重试 |
+| **模型返回空内容/重复循环** | 模型行为异常 | ⚠️ 特殊处理 | 提示用户换问法，触发备用模型 |
+
+### 2. 指数退避重试实现
+
+[retry_backoff.py](../src/ai_learning/retry_backoff.py)
+
+```python
+import time
+import random
+
+def retry_with_backoff(func, max_retries=3, base_delay=1.0, max_delay=60.0):
+    """带指数退避和随机抖动的重试函数"""
+    retryable_status = {429, 500, 502, 503, 504}
+    
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except Exception as e:
+            status_code = getattr(e, 'status_code', None)
+            if status_code not in retryable_status:
+                raise  # 不可重试错误直接抛出
+            
+            if attempt == max_retries:
+                raise  # 重试耗尽，触发降级
+            
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            jitter = random.uniform(0, delay * 0.5)  # 随机抖动避免惊群效应
+            time.sleep(delay + jitter)
+```
+
+### 3. 服务降级机制（兜底三策略）
+
+1. **切换备用模型**：主模型连续失败 5 次触发熔断，流量切到备用模型，60 秒后放探测流量验证恢复
+2. **缓存降级**：对相似问题返回缓存结果
+3. **友好提示**：前端显示"服务繁忙，请稍后重试"而非技术报错
+
+---
+
+## 三、参数调优：temperature / top_p / max_tokens
+
+### 1. temperature：控制输出随机性
+
+取值范围通常 0~2，决定概率分布的"尖锐程度"。
+
+| 取值区间 | 适用场景 | 效果 |
+| ---------- | ---------- | ------ |
+| **0 ~ 0.3** | 代码生成、信息抽取、分类、数学推理 | 确定性输出，每次回答几乎一致 |
+| **0.3 ~ 0.5** | 翻译、摘要、改写 | 需要一点灵活度让句子通顺，但不能乱编 |
+| **0.5 ~ 0.8** | 通用对话、客服问答 | 自然但不失控，模型出厂默认值所在区间 |
+| **0.8 ~ 1.2** | 创意写作、头脑风暴 | 多样性高，同一问题给十个不同方向答案 |
+| **> 1.3** | 不推荐 | 开始明显不靠谱，出现逻辑断裂、事实胡编 |
+
+### 2. top_p：核采样，限制候选词范围
+
+取值 0~1，按概率从高到低累加，累加到刚好超过 `top_p` 时截断，只保留这批词。
+
+| 取值区间 | 适用场景 |
+| ---------- | ---------- |
+| **0.1 ~ 0.5** | 事实问答、代码、工具调用 |
+| **0.5 ~ 0.8** | 翻译、摘要 |
+| **0.8 ~ 1.0** | 创意生成 |
+
+**关键原则**：`temperature` 和 `top_p` 都在控制随机性，**不要同时大幅调整**。实践中固定 `top_p = 0.9`（默认值），只调 `temperature`，因为 `temperature` 的直觉更线性、更好预测。
+
+> 如果遇到"车轱辘话、总是重复同一个句式"，可尝试把 `top_p` 降到 0.8 左右，砍掉长尾能压掉奇怪的重复选项。
+
+### 3. max_tokens：最容易出事的参数
+
+**它限制的是"输出"Token 数，和输入长度无关。** 很多厂商按 `max_tokens` 做预扣，设太大浪费额度。
+
+| 场景 | 推荐值 |
+| ------ | -------- |
+| 分类、意图识别、是否判断 | 100 ~ 500 |
+| 工具调用参数抽取 | 200 ~ 500 |
+| 常规问答、摘要 | 800 ~ 2048 |
+| 长文生成、报告 | 2048 ~ 8192 |
+| 代码生成 | 2048 ~ 4096 |
+
+**判断是否被截断的核心方法**：看 `finish_reason` 字段
+
+- `stop`：模型正常说完 ✅
+- `length`：碰到 `max_tokens` 上限被截断，答案残缺 ❌
+- `content_filter`：被内容安全策略拦截
+
+流式模式下，`finish_reason` 在最后一个 Chunk 返回。业务落库前务必检查——看到 `length` 就知道这条记录是半截的，可以标记异常或带着已有内容让模型接着写。
+
+---
+
+## 四、三者联动：一个完整的生产级调用模板
+
+```python
+import requests, json, time, random, os
+
+class LLMClient:
+    def __init__(self, api_key: str, base_url: str):
+        self.api_key = api_key
+        self.base_url = base_url
+    
+    def chat(self, prompt: str, temperature: float = 0.7, 
+             top_p: float = 0.9, max_tokens: int = 2048, 
+             stream: bool = True, max_retries: int = 3):
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream" if stream else "application/json"
+        }
+        payload = {
+            "model": "qwen-plus",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "stream": stream
+        }
+        
+        for attempt in range(max_retries + 1):
+            try:
+                resp = requests.post(
+                    self.base_url, headers=headers, 
+                    json=payload, stream=stream, timeout=60
+                )
+                resp.raise_for_status()
+                
+                if stream:
+                    return self._handle_stream(resp)
+                else:
+                    result = resp.json()
+                    finish_reason = result["choices"][0].get("finish_reason", "")
+                    if finish_reason == "length":
+                        # 被截断，自动续写
+                        payload["messages"].append(
+                            {"role": "assistant", "content": result["choices"][0]["message"]["content"]}
+                        )
+                        payload["messages"].append(
+                            {"role": "user", "content": "请继续"}
+                        )
+                        return self.chat("", **{k: v for k, v in locals().items() 
+                                               if k not in ['self', 'attempt', 'resp', 'result']})
+                    return result["choices"][0]["message"]["content"]
+                    
+            except Exception as e:
+                status = getattr(e, 'status_code', None)
+                if status in {401, 403, 400, 422}:
+                    raise  # 不可重试错误直接抛出
+                if status not in {429, 500, 502, 503, 504} and attempt == max_retries:
+                    raise
+                
+                delay = min(1.0 * (2 ** attempt), 60.0) + random.uniform(0, 0.5)
+                time.sleep(delay)
+        
+        raise Exception("重试耗尽，服务降级")
+    
+    def _handle_stream(self, response):
+        full_content, buffer = "", ""
+        for raw in response.iter_content(chunk_size=None, decode_unicode=False):
+            if not raw: continue
+            buffer += raw.decode("utf-8", errors="replace")
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                    try:
+                        chunk = json.loads(line[6:])
+                        delta = chunk["choices"][0]["delta"].get("content", "")
+                        finish = chunk["choices"][0].get("finish_reason", "")
+                        if delta:
+                            full_content += delta
+                            print(delta, end="", flush=True)
+                        if finish == "length":
+                            print("\n⚠️ 输出被截断，建议增大max_tokens")
+                    except json.JSONDecodeError:
+                        pass
+        print()
+        return full_content
+```
+
+---
+
+## 五、调参速查口诀
+
+> - **要准确** → temperature 0~0.3，top_p 保持默认
+> - **要自然** → temperature 0.5~0.8
+> - **要创意** → temperature 0.8~1.2
+> - **怕截断** → 看 `finish_reason`，被截就续写
+> - **怕限流** → 指数退避，别硬刚
+> - **怕单点** → 主备模型 + 熔断切换
+
+这套组合拳打下来，基本能覆盖 90% 的大模型 API 工程化场景。实际项目中建议把参数配置抽成环境变量或配置文件，不同业务场景用不同的参数组合，而不是全局一套。
