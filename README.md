@@ -60,7 +60,7 @@ uv add requests
 - [流式输出](./chats/02HTTP请求与响应的流式处理.md)
 - [指数退避重试实现](./chats/03指数退避重试实现.md)
 - [对比不同模型的输出质量、响应速度和成本](./chats/04对比不同模型的输出质量响应速度和成本.md)
-- 实验脚本：`src/ai_learning/model_compare.py`
+- [编程练习题](./chats/05编程题.md)
 
 ## 注意事项
 
