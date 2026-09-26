@@ -1,9 +1,16 @@
 def chunk_text(text: str, chunk_size: int):
-    if not isinstance(chunk_size, int):
+    if not isinstance(chunk_size, int) or chunk_size < 0:
         raise ValueError("分块大小必须为正整数")
-    print(text)
-    yield text[:len(text)/chunk_size]
+    sta = 0
+    while sta <= len(text):
+        if sta + chunk_size <= len(text):
+            yield text[sta : sta + chunk_size]
+        else:
+            yield text[sta:]
+        sta += chunk_size
+
 
 if __name__ == "__main__":
-    for str in chunk_text("我们在一起！",2):
-        print(str,end=' ')
+    gen = chunk_text("你好", 1)
+    print(next(gen))
+    print(next(gen))
