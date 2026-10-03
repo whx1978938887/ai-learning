@@ -61,6 +61,10 @@ uv add requests
 - [指数退避重试实现](./chats/03指数退避重试实现.md)
 - [对比不同模型的输出质量、响应速度和成本](./chats/04对比不同模型的输出质量响应速度和成本.md)
 - [编程练习题](./chats/05编程题.md)
+- [结构化 Prompt 设计](./chats/06结构化Prompt设计.md)
+- [CoT、零样本/少样本学习与 Negative Prompting](./chats/07CoT零样本少样本与NegativePrompting.md)
+- [练习模型输出 JSON 与 Markdown 表格](./chats/08练习模型输出JSON与Markdown表格.md)
+- [编写 Prompt 模板库：文案生成、代码生成与数据提取](./chats/09编写Prompt模板库.md)
 
 ## 注意事项
 
