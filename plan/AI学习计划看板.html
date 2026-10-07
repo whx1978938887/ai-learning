@@ -137,6 +137,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans S
   <button class="btn" data-primary-action="expand-all" onclick="toggleAll(true)">展开全部</button>
   <button class="btn" onclick="toggleAll(false)">折叠全部</button>
   <button class="btn" onclick="scrollToToday()">跳转到今天</button>
+  <a class="btn" href="../chats/00学习路线与复习计划.md" target="_blank" rel="noopener">查看每日学习讲义</a>
   <button class="btn danger" onclick="resetAll()">重置进度</button>
 </div>
 
@@ -145,96 +146,97 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans S
 
 <script>
 // SECTION: task-data
+// Dates are derived from each task's Day label; keep task IDs stable to preserve saved progress.
 const WEEKS = [
   {
-    num: "第1周", title: "大模型API调用 + Prompt工程", dateRange: "9/20 - 9/26",
+    num: "第1周", title: "模型 API、Prompt 与 CLI",
     color: "#6c8cff",
     tasks: [
-      {id:"w1t1",day:"Day 1",text:"注册通义千问、DeepSeek、智谱GLM开发者账号，获取API Key",date:"09-20",priority:"p1"},
-      {id:"w1t2",day:"Day 1",text:"用Python requests库或官方SDK调用API，实现基础对话补全",date:"09-20",priority:"p1"},
-      {id:"w1t3",day:"Day 2",text:"掌握流式输出、错误处理、参数调优（temperature、max_tokens、top_p）",date:"09-21",priority:"p2"},
-      {id:"w1t4",day:"Day 2",text:"对比不同模型的输出质量、响应速度和成本，写对比笔记",date:"09-21",priority:"p2"},
-      {id:"w1t5",day:"Day 3",text:"学习结构化Prompt设计（角色设定+任务描述+输出格式+Few-shot）",date:"09-22",priority:"p1"},
-      {id:"w1t6",day:"Day 4",text:"掌握CoT思维链、零样本/少样本学习、Negative Prompting",date:"09-23",priority:"p1"},
-      {id:"w1t7",day:"Day 4",text:"练习让模型输出JSON格式、Markdown表格等结构化内容",date:"09-23",priority:"p2"},
-      {id:"w1t8",day:"Day 5",text:"编写Prompt模板库（文案生成、代码生成、数据提取等场景）",date:"09-24",priority:"p1"},
-      {id:"w1t9",day:"Day 5-6",text:"用Python写CLI聊天机器人，支持多轮对话和上下文记忆",date:"09-24",priority:"p1"},
-      {id:"w1t10",day:"Day 6-7",text:"加入流式输出 + 对话历史管理 + 代码上传GitHub写README",date:"09-25",priority:"p1"}
+      {id:"w1t1",day:"Day 1",text:"理解服务商、模型与API Key；安全配置环境变量，确认密钥不进Git",priority:"p1"},
+      {id:"w1t2",day:"Day 1",text:"用requests或官方SDK对话：HTTP/JSON、消息角色、超时与状态码",priority:"p1"},
+      {id:"w1t3",day:"Day 2",text:"掌握SSE流式输出、错误处理、重试与参数调优（temperature、max_tokens、top_p）",priority:"p2"},
+      {id:"w1t4",day:"Day 2",text:"对比不同模型的输出质量、响应速度和成本，写对比笔记",priority:"p2"},
+      {id:"w1t5",day:"Day 3",text:"学习结构化Prompt设计（角色设定+任务描述+输出格式+Few-shot）",priority:"p1"},
+      {id:"w1t6",day:"Day 4",text:"掌握CoT思维链、零样本/少样本学习、Negative Prompting",priority:"p1"},
+      {id:"w1t7",day:"Day 4",text:"练习让模型输出JSON格式、Markdown表格等结构化内容",priority:"p2"},
+      {id:"w1t8",day:"Day 5",text:"编写Prompt模板库（文案生成、代码生成、数据提取等场景）",priority:"p1"},
+      {id:"w1t9",day:"Day 5-6",text:"用Python写CLI多轮聊天；管理消息历史、上下文窗口与历史裁剪",priority:"p1"},
+      {id:"w1t10",day:"Day 6-7",text:"整合流式、历史与离线测试；配置依赖、Git忽略密钥并写GitHub README",priority:"p1"}
     ]
   },
   {
-    num: "第2周", title: "LangChain框架 + RAG入门", dateRange: "9/27 - 10/3",
+    num: "第2周", title: "LangChain 与 RAG 入门",
     color: "#5470e6",
     tasks: [
-      {id:"w2t1",day:"Day 8",text:"学习LangChain核心概念（Chain、Memory、Retriever、Tool）",date:"09-27",priority:"p1"},
-      {id:"w2t2",day:"Day 8-9",text:"用LangChain重构聊天机器人，加入对话记忆功能",date:"09-27",priority:"p1"},
-      {id:"w2t3",day:"Day 9",text:"学习PromptTemplate和OutputParser",date:"09-28",priority:"p2"},
-      {id:"w2t4",day:"Day 10",text:"学习文档加载器（PyPDF2、python-docx、Unstructured）",date:"09-29",priority:"p1"},
-      {id:"w2t5",day:"Day 10-11",text:"掌握文本分块策略（按字符数、按段落、递归分块）",date:"09-29",priority:"p1"},
-      {id:"w2t6",day:"Day 11",text:"用NumPy/Pandas处理测试文档，练习数据清洗",date:"09-30",priority:"p2"},
-      {id:"w2t7",day:"Day 11",text:"了解Embedding原理，调用Embedding API把文本转向量",date:"09-30",priority:"p1"},
-      {id:"w2t8",day:"Day 12",text:"学习Chroma或FAISS向量数据库",date:"10-01",priority:"p1"},
-      {id:"w2t9",day:"Day 12-13",text:"实现完整RAG流程（加载→分块→向量化→检索→生成）",date:"10-01",priority:"p1"},
-      {id:"w2t10",day:"Day 13-14",text:"搭建个人笔记问答助手，上传Markdown笔记回答问题",date:"10-02",priority:"p1"},
-      {id:"w2t11",day:"Day 14",text:"优化分块大小和重叠率，对比检索效果",date:"10-03",priority:"p2"}
+      {id:"w2t1",day:"Day 8",text:"学习当前LangChain的Runnable/LCEL、Retriever与Tool；理解旧版Chain/Memory的版本差异",priority:"p1"},
+      {id:"w2t2",day:"Day 8-9",text:"用LangChain重构聊天机器人，加入对话记忆功能",priority:"p1"},
+      {id:"w2t3",day:"Day 9",text:"学习PromptTemplate和OutputParser",priority:"p2"},
+      {id:"w2t4",day:"Day 10",text:"学习PDF/Word/TXT/Markdown加载、OCR局限、来源元数据及文件安全校验",priority:"p1"},
+      {id:"w2t5",day:"Day 10-11",text:"掌握文本分块策略（按字符数、按段落、递归分块）",priority:"p1"},
+      {id:"w2t6",day:"Day 11",text:"练习文档清洗、去重、空内容和元数据处理（NumPy/Pandas为可选工具）",priority:"p2"},
+      {id:"w2t7",day:"Day 11",text:"了解Embedding原理，调用Embedding API把文本转向量",priority:"p1"},
+      {id:"w2t8",day:"Day 12",text:"学习Chroma或FAISS向量数据库",priority:"p1"},
+      {id:"w2t9",day:"Day 12-13",text:"实现RAG（加载→分块→向量化→检索→生成），加入来源和证据不足时拒答",priority:"p1"},
+      {id:"w2t10",day:"Day 13-14",text:"搭建个人Markdown笔记问答助手：来源定位、增量更新与不可信内容边界",priority:"p1"},
+      {id:"w2t11",day:"Day 14",text:"用固定问题集比较分块大小、重叠率和top-k，记录检索基线",priority:"p2"}
     ]
   },
   {
-    num: "第3周", title: "RAG进阶 + Agent开发", dateRange: "10/4 - 10/10",
+    num: "第3周", title: "RAG 评估进阶与 Agent",
     color: "#a78bfa",
     tasks: [
-      {id:"w3t1",day:"Day 15",text:"学习混合检索（关键词+语义）、重排序Reranker、HyDE",date:"10-04",priority:"p1"},
-      {id:"w3t2",day:"Day 15-16",text:"了解RAGAS评估框架，量化评估RAG检索和生成质量",date:"10-04",priority:"p1"},
-      {id:"w3t3",day:"Day 16",text:"优化笔记问答助手，提升回答准确率，减少幻觉",date:"10-05",priority:"p1"},
-      {id:"w3t4",day:"Day 17",text:"学习LlamaIndex框架，对比LangChain和LlamaIndex",date:"10-06",priority:"p2"},
-      {id:"w3t5",day:"Day 18",text:"理解Function Calling机制（模型决定调用哪个工具、传什么参数）",date:"10-07",priority:"p1"},
-      {id:"w3t6",day:"Day 18-19",text:"用LangChain实现工具调用（查天气、搜网页、算数学题）",date:"10-07",priority:"p1"},
-      {id:"w3t7",day:"Day 19",text:"学习ReAct范式（推理→行动→观察→再推理）",date:"10-08",priority:"p1"},
-      {id:"w3t8",day:"Day 20",text:"学习LangGraph框架，实现有状态的任务编排",date:"10-09",priority:"p1"},
-      {id:"w3t9",day:"Day 20",text:"实现Agent短期记忆（对话历史）和长期记忆（向量库存储）",date:"10-09",priority:"p1"},
-      {id:"w3t10",day:"Day 21",text:"搭建AI办公助手（查天气、搜新闻、管待办、写邮件）",date:"10-10",priority:"p1"}
+      {id:"w3t1",day:"Day 15",text:"学习BM25+语义混合检索、分数融合与Reranker；将HyDE作为可评估的选项",priority:"p1"},
+      {id:"w3t2",day:"Day 15-16",text:"建立RAG基准集，量化Recall@k/MRR、回答忠实度、引用与拒答表现",priority:"p1"},
+      {id:"w3t3",day:"Day 16",text:"依据评估错误定位解析/分块/检索/生成问题，再优化并做回归",priority:"p1"},
+      {id:"w3t4",day:"Day 17",text:"可选：比较当前版本的LlamaIndex与LangChain，按项目需要择一",priority:"p2"},
+      {id:"w3t5",day:"Day 18",text:"理解Tool Calling：结构化参数、应用端校验、授权后执行与结果回传",priority:"p1"},
+      {id:"w3t6",day:"Day 18-19",text:"实现受限工具（天气/计算/搜索）；增加超时、最小权限和副作用确认",priority:"p1"},
+      {id:"w3t7",day:"Day 19",text:"学习ReAct行动-观察循环；设置最大步数、停止条件与重复调用检测",priority:"p1"},
+      {id:"w3t8",day:"Day 20",text:"用LangGraph实现State、条件路由、checkpoint与人工介入",priority:"p1"},
+      {id:"w3t9",day:"Day 20",text:"设计短期/长期记忆：同意、隐私、保留期限与删除机制",priority:"p1"},
+      {id:"w3t10",day:"Day 21",text:"搭建AI办公助手（查天气、搜新闻、管待办、写邮件）",priority:"p1"}
     ]
   },
   {
-    num: "第4周", title: "综合项目 + 工程化部署", dateRange: "10/11 - 10/17",
+    num: "第4周", title: "综合 RAG 项目与工程化部署",
     color: "#22d3ee",
     tasks: [
-      {id:"w4t1",day:"Day 22",text:"搭建企业知识库问答系统——支持PDF/Word/TXT多格式上传",date:"10-11",priority:"p1"},
-      {id:"w4t2",day:"Day 23",text:"实现文档自动分块、向量化、存入向量数据库",date:"10-12",priority:"p1"},
-      {id:"w4t3",day:"Day 24",text:"实现语义检索 + 关键词检索的混合检索",date:"10-13",priority:"p1"},
-      {id:"w4t4",day:"Day 25",text:"支持多轮对话和引用来源标注",date:"10-14",priority:"p1"},
-      {id:"w4t5",day:"Day 26",text:"用Streamlit或Gradio搭建Web界面，代码上传GitHub写技术文档",date:"10-15",priority:"p1"},
-      {id:"w4t6",day:"Day 27",text:"Docker容器化部署——编写Dockerfile和docker-compose.yml",date:"10-16",priority:"p1"},
-      {id:"w4t7",day:"Day 28",text:"部署到本地或云服务器，了解vLLM容器化部署",date:"10-17",priority:"p1"}
+      {id:"w4t1",day:"Day 22",text:"设计企业知识库架构与上传：鉴权、租户隔离、类型/大小校验和数据保留",priority:"p1"},
+      {id:"w4t2",day:"Day 23",text:"实现可重试/幂等的入库、分块、向量化、增量更新与级联删除",priority:"p1"},
+      {id:"w4t3",day:"Day 24",text:"实现并评估语义+关键词混合检索、重排与权限过滤",priority:"p1"},
+      {id:"w4t4",day:"Day 25",text:"支持多轮追问、可定位引用、证据不足拒答与逐次权限校验",priority:"p1"},
+      {id:"w4t5",day:"Day 26",text:"用Streamlit或Gradio搭建Web界面，代码上传GitHub写技术文档",priority:"p1"},
+      {id:"w4t6",day:"Day 27",text:"Docker/Compose：非root、健康检查、持久化；密钥只在运行时注入",priority:"p1"},
+      {id:"w4t7",day:"Day 28",text:"部署并配置日志/指标/成本告警、备份与回滚；vLLM自托管为选学",priority:"p1"}
     ]
   },
   {
-    num: "第5周", title: "模型微调基础 + 项目打磨", dateRange: "10/18 - 10/24",
+    num: "第5周", title: "模型微调评估与 Agent 项目整合",
     color: "#fb923c",
     tasks: [
-      {id:"w5t1",day:"Day 29",text:"了解LoRA/QLoRA轻量化微调原理",date:"10-18",priority:"p2"},
-      {id:"w5t2",day:"Day 30",text:"用LLaMA-Factory工具对Qwen或Llama3做简单微调",date:"10-19",priority:"p2"},
-      {id:"w5t3",day:"Day 31",text:"微调一个垂直领域小模型（如客服问答），体验完整流程",date:"10-20",priority:"p2"},
-      {id:"w5t4",day:"Day 32",text:"设计AI Agent智能办公助手——支持多工具调用（搜索、计算器、日程管理）",date:"10-21",priority:"p1"},
-      {id:"w5t5",day:"Day 33",text:"实现任务规划和多步推理功能",date:"10-22",priority:"p1"},
-      {id:"w5t6",day:"Day 34",text:"用LangGraph实现状态管理",date:"10-23",priority:"p1"},
-      {id:"w5t7",day:"Day 35",text:"用FastAPI封装成API接口，项目上传GitHub",date:"10-24",priority:"p1"}
+      {id:"w5t1",day:"Day 29",text:"判断是否需要微调；学习LoRA/QLoRA原理、显存需求与适用边界",priority:"p2"},
+      {id:"w5t2",day:"Day 30",text:"整理训练数据：去重、隐私/许可检查、训练验证测试集隔离",priority:"p2"},
+      {id:"w5t3",day:"Day 31",text:"用LLaMA-Factory做可复现小规模实验；无GPU时完成配置审查",priority:"p2"},
+      {id:"w5t4",day:"Day 32",text:"用固定测试集比较基座/微调效果，检查过拟合、回归并制定回滚",priority:"p1"},
+      {id:"w5t5",day:"Day 33",text:"将Agent落为项目：定义工具目录、参数schema、权限和副作用等级",priority:"p1"},
+      {id:"w5t6",day:"Day 34",text:"实现多步任务确认/恢复流程；敏感操作须人工确认",priority:"p1"},
+      {id:"w5t7",day:"Day 35",text:"用FastAPI封装Agent：请求校验、鉴权、错误码、超时与自动测试",priority:"p1"}
     ]
   },
   {
-    num: "第6周", title: "简历优化 + 面试准备 + 投递", dateRange: "10/25 - 11/3",
+    num: "职业阶段", title: "作品集、面试与求职准备",
     color: "#4ade80",
     tasks: [
-      {id:"w6t1",day:"Day 36",text:"简历优化——突出后端开发经验 + Docker部署能力 + 2个完整AI项目",date:"10-25",priority:"p1"},
-      {id:"w6t2",day:"Day 37",text:"用STAR法则撰写项目描述（场景→任务→行动→结果），量化成果",date:"10-26",priority:"p1"},
-      {id:"w6t3",day:"Day 38",text:"整理GitHub仓库，README写清楚技术栈和部署方式",date:"10-27",priority:"p1"},
-      {id:"w6t4",day:"Day 39",text:"刷题——RAG全流程原理、幻觉问题解决、Embedding和向量检索",date:"10-28",priority:"p1"},
-      {id:"w6t5",day:"Day 40",text:"刷题——ReAct范式、Function Calling机制、LangChain核心组件",date:"10-29",priority:"p1"},
-      {id:"w6t6",day:"Day 41",text:"刷题——模型选型、成本控制、后端开发基础题、Docker/K8s",date:"10-30",priority:"p1"},
-      {id:"w6t7",day:"Day 42",text:"开始投递，优先投传统行业AI岗（金融、医疗、制造、教育）",date:"10-31",priority:"p1"},
-      {id:"w6t8",day:"Day 43",text:"重点投递珠三角智能制造、新能源企业",date:"11-01",priority:"p1"},
-      {id:"w6t9",day:"Day 44",text:"根据面试反馈持续优化简历和项目",date:"11-02",priority:"p2"},
-      {id:"w6t10",day:"Day 45",text:"针对性补强面试中发现的薄弱知识点，持续投递",date:"11-03",priority:"p2"}
+      {id:"w6t1",day:"Day 36",text:"简历定位：如实呈现后端、AI应用、测试、部署能力和可验证项目成果",priority:"p1"},
+      {id:"w6t2",day:"Day 37",text:"用STAR法则写项目描述；每个量化结果注明测量方法与条件",priority:"p1"},
+      {id:"w6t3",day:"Day 38",text:"整理GitHub仓库，README写清楚技术栈和部署方式",priority:"p1"},
+      {id:"w6t4",day:"Day 39",text:"复习RAG全流程、幻觉诊断、Embedding与检索评估",priority:"p1"},
+      {id:"w6t5",day:"Day 40",text:"复习ReAct、Tool Calling安全边界、LangChain/LangGraph职责",priority:"p1"},
+      {id:"w6t6",day:"Day 41",text:"复习模型选型/成本、后端基础、Docker；Kubernetes作为加分项",priority:"p1"},
+      {id:"w6t7",day:"Day 42",text:"按真实技能和目标筛选职位，建立申请记录",priority:"p1"},
+      {id:"w6t8",day:"Day 43",text:"按目标地区/行业定向准备；制造/新能源等方向按个人目标选学",priority:"p1"},
+      {id:"w6t9",day:"Day 44",text:"根据面试反馈持续优化简历和项目",priority:"p2"},
+      {id:"w6t10",day:"Day 45",text:"针对性补强面试中发现的薄弱知识点，持续投递",priority:"p2"}
     ]
   }
 ];
@@ -242,6 +244,7 @@ const WEEKS = [
 // SECTION: state
 const STORAGE_KEY = 'ai-learning-dashboard-v1';
 const STATE_KEY = 'ai-learning-state-v1';
+const PLAN_START_DATE_KEY = 'ai-learning-plan-start-v2';
 
 function loadState() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
@@ -260,25 +263,56 @@ function saveCollapsed(c) {
 
 let state = loadState();
 let collapsed = loadCollapsed();
+let planStartDate = loadPlanStartDate();
 
 // SECTION: utils
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function loadPlanStartDate() {
+  const saved = localStorage.getItem(PLAN_START_DATE_KEY);
+  if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+    const [year, month, day] = saved.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    if (toDateKey(date) === saved) return date;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  localStorage.setItem(PLAN_START_DATE_KEY, toDateKey(today));
+  return today;
+}
+
+function taskDate(task) {
+  const match = task.day.match(/Day\s+(\d+)(?:-(\d+))?/);
+  const dayNumber = Number(match && (match[2] || match[1]));
+  const date = new Date(planStartDate);
+  date.setDate(date.getDate() + dayNumber - 1);
+  return toDateKey(date);
+}
+
+function formatTaskDate(dateKey) {
+  const [, , month, day] = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return `${Number(month)}/${Number(day)}`;
+}
+
 function todayStr() {
-  const d = new Date();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${m}-${day}`;
+  return toDateKey(new Date());
 }
 
 function getCurrentWeekIndex() {
   const today = todayStr();
   for (let i = 0; i < WEEKS.length; i++) {
     const tasks = WEEKS[i].tasks;
-    const first = tasks[0].date;
-    const last = tasks[tasks.length-1].date;
+    const first = taskDate(tasks[0]);
+    const last = taskDate(tasks[tasks.length - 1]);
     if (today >= first && today <= last) return i;
   }
   // Before week 1 or after all
-  if (today < WEEKS[0].tasks[0].date) return 0;
+  if (today < taskDate(WEEKS[0].tasks[0])) return 0;
   return WEEKS.length - 1;
 }
 
@@ -326,7 +360,7 @@ function render() {
       <div class="week-info">
         <span class="week-num" style="color:${week.color};background:${week.color}18">${week.num}</span>
         <span class="week-title">${week.title}</span>
-        <span class="week-date">${week.dateRange}</span>
+        <span class="week-date">${formatTaskDate(taskDate(week.tasks[0]))} - ${formatTaskDate(taskDate(week.tasks[week.tasks.length - 1]))}</span>
       </div>
       <div class="week-progress">
         <span class="week-count">${wDone} / ${week.tasks.length}</span>
@@ -348,8 +382,9 @@ function render() {
 
     week.tasks.forEach(task => {
       const done = !!state[task.id];
-      const isToday = task.date === today;
-      const isOverdue = !done && task.date < today;
+      const dueDate = taskDate(task);
+      const isToday = dueDate === today;
+      const isOverdue = !done && dueDate < today;
 
       const item = document.createElement('div');
       item.className = 'task-item' + (done ? ' completed' : '') + (isToday ? ' today' : '') + (isOverdue ? ' overdue' : '');
@@ -368,7 +403,7 @@ function render() {
             <span class="task-day ${priorityClass}">${priorityLabel}</span>
             <span class="task-date">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a.5.5 0 01.5.5V1h7V.5a.5.5 0 011 0V1h1a2 2 0 012 2v11a2 2 0 01-2 2H2a2 2 0 01-2-2V3a2 2 0 012-2h1V.5A.5.5 0 014 0zM1 5v9a1 1 0 001 1h12a1 1 0 001-1V5H1z"/></svg>
-              ${task.date}
+              ${formatTaskDate(dueDate)}
             </span>
             <span class="task-date" style="opacity:.7">${task.day}</span>
           </div>
@@ -443,11 +478,11 @@ function calcStreak() {
     d.setDate(d.getDate() - i);
     const m = String(d.getMonth()+1).padStart(2,'0');
     const day = String(d.getDate()).padStart(2,'0');
-    const dateStr = `${m}-${day}`;
+    const dateStr = `${d.getFullYear()}-${m}-${day}`;
     let hasTask = false, allDone = true;
     WEEKS.forEach(w => {
       w.tasks.forEach(t => {
-        if (t.date === dateStr) { hasTask = true; if (!state[t.id]) allDone = false; }
+        if (taskDate(t) === dateStr) { hasTask = true; if (!state[t.id]) allDone = false; }
       });
     });
     if (hasTask && allDone) streak++;
@@ -470,7 +505,7 @@ function scrollToToday() {
   const today = todayStr();
   let found = false;
   WEEKS.forEach((w, wi) => {
-    const hasToday = w.tasks.some(t => t.date === today);
+    const hasToday = w.tasks.some(t => taskDate(t) === today);
     if (hasToday && !found) {
       found = true;
       const sec = document.getElementById('week-' + wi);
@@ -486,9 +521,12 @@ function scrollToToday() {
 }
 
 function resetAll() {
-  if (confirm('确定要重置所有任务进度吗？此操作不可撤销。')) {
+  if (confirm('确定要清空所有进度并从今天重新开始吗？此操作不可撤销。')) {
     state = {};
     saveState(state);
+    planStartDate = new Date();
+    planStartDate.setHours(0, 0, 0, 0);
+    localStorage.setItem(PLAN_START_DATE_KEY, toDateKey(planStartDate));
     render();
     showToast('已重置所有进度');
   }

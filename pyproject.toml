@@ -7,7 +7,9 @@ authors = [
     { name = "HaiXuan Wu", email = "whx1978938887@student.gdufe.edu.cn" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "gradio>=6.29.1",
+]
 
 [project.scripts]
 ai-learning = "ai_learning:main"

@@ -8,7 +8,7 @@
 
 ```shell
 mkdir 文件夹名称
-cd 文件夹`
+cd 文件夹名称
 ```
 
 ### 2. 初始化uv环境
@@ -24,11 +24,10 @@ uv init
 
 ### 3.创建入口文件
 
-在src文件夹新建一个.env文件，把密钥写进去，格式如下：
+仅在本地项目根目录创建 `.env`，使用服务商要求的环境变量名。示例值必须替换为自己的密钥；`.env` 加入 `.gitignore`，不要提交到 Git：
 
 ```text
-OPENAI_API_KEY=sk-xxxxxx
-AUTHROIC_API_KAY=sk-xxxxxx
+AI_API_KEY=replace_with_your_key
 ```
 
 ### 4.配置VS Code环境(可选)
@@ -42,12 +41,12 @@ AUTHROIC_API_KAY=sk-xxxxxx
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     // 终端打开时自动激活虚拟环境
     "python.terminal.activateEnvironment": true,
-    // 调试时自动加载 src 目录下的 .env 文件
-    "python.envFile": "${workspaceFolder}/src/.env"
+    // 调试时从项目根目录加载本地环境变量文件
+    "python.envFile": "${workspaceFolder}/.env"
 }
 ```
 
-### 4.使用uv安装Python库
+### 5. 使用 uv 安装 Python 库
 
 ```bash
 uv add requests
@@ -55,20 +54,14 @@ uv add requests
 
 ## 核心知识点
 
-### 1.[掌握流式输出与参数调优](./chats/01掌握流式输出和参数调优md)
-
-- [流式输出](./chats/02HTTP请求与响应的流式处理.md)
-- [指数退避重试实现](./chats/03指数退避重试实现.md)
-- [对比不同模型的输出质量、响应速度和成本](./chats/04对比不同模型的输出质量响应速度和成本.md)
-- [编程练习题](./chats/05编程题.md)
-- [结构化 Prompt 设计](./chats/06结构化Prompt设计.md)
-- [CoT、零样本/少样本学习与 Negative Prompting](./chats/07CoT零样本少样本与NegativePrompting.md)
-- [练习模型输出 JSON 与 Markdown 表格](./chats/08练习模型输出JSON与Markdown表格.md)
-- [编写 Prompt 模板库：文案生成、代码生成与数据提取](./chats/09编写Prompt模板库.md)
+- [45 天每日学习讲义索引](./chats/00学习路线与复习计划.md)：从基础概念逐步进入项目实践；每篇提供术语解释、例子、易错点、阶梯练习和验收标准，优先支持 Mock/离线学习。
+- [Day 1：密钥管理与模型 API](./chats/Day01-密钥管理与模型API.md)
+- [Day 22：企业知识库架构与上传安全](./chats/Day22-企业知识库架构与上传安全.md)
+- [Day 45：薄弱点复习与持续投递](./chats/Day45-薄弱点复习与持续投递.md)
 
 ## 注意事项
 
 > **调用openai和requests的区别**
 >
-> openai内部封装了请求
-> 调用requests需要自己封装请求
+> 官方 SDK 通常封装了请求结构和响应解析；使用 requests 需要自行组装 HTTP 请求。
+> 两种方式都需要设置超时、安全读取密钥并处理状态码和错误。
