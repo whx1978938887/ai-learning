@@ -22,7 +22,13 @@ uv init
 - .venv/(Python虚拟环境)
 - pyproject.toml(项目依赖管理文件)
 
-### 3.创建入口文件
+### 3.导入python-dotenv库
+
+```shell
+uv add python-dotenv
+```
+
+### 4.创建入口文件
 
 仅在本地项目根目录创建 `.env`，使用服务商要求的环境变量名。示例值必须替换为自己的密钥；`.env` 加入 `.gitignore`，不要提交到 Git：
 
@@ -30,7 +36,7 @@ uv init
 AI_API_KEY=replace_with_your_key
 ```
 
-### 4.配置VS Code环境(可选)
+### 5.配置VS Code环境(可选)
 
 1. 打开VS Code设置：按下`Ctrl+,`，点击右上角的“打开设置(JSON)”图标
 2. 填入以下配置
@@ -46,7 +52,7 @@ AI_API_KEY=replace_with_your_key
 }
 ```
 
-### 5. 使用 uv 安装 Python 库
+### 6. 使用 uv 安装 Python 库（可选）
 
 ```bash
 uv add requests
